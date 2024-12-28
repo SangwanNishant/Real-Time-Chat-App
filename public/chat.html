@@ -1,20 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
-  
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="chat.css">
 </head>
 <body>
-  <h1>Chat</h1>
-  <p>Welcome, <span id="username">Loading...</span></p>
-  <input type="text" id="recipient" placeholder="Recipient Username">
-  <input type="text" id="messageInput" placeholder="Your Message">
-  <button id="sendMessage">Send</button>
-  <div id="messages"></div>
-  <script  src="/socket.io/socket.io.js"></script>
-  <script src="chat.js"></script>
+    <div class="chat-container">
+        <!-- Left side - Chat List -->
+        <div class="chat-list">
+            <div class="search-bar">
+                <input type="text" placeholder="Search people..." id="searchBar">
+            </div>
+            <!-- This is where the dynamic contacts will be injected -->
+            <div id="chatList"></div>
+        </div>
+
+        <!-- Right side - Chat Box -->
+        <div class="chat-box">
+            <div class="chat-header">
+                <div class="name" id="chatWith">Select a contact</div>
+                <div class="status" id="status">Offline</div>
+            </div>
+            <div class="messages" id="messages">
+                <!-- This is where the dynamic messages will appear -->
+            </div>
+            <div class="message-input">
+                <input type="text" placeholder="Type a message..." id="messageInput" disabled>
+                <button id="sendMessageBtn" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Section (Top Right) -->
+    <div class="profile">
+        <div class="profile-picture" id="profilePic">
+            <img src="" alt="Profile Picture" id="profileImg">
+        </div>
+        <div id="dropdownMenu" class="dropdown-menu hidden">
+            <button id="logoutBtn">Logout</button>
+            <button id="settingsBtn">Settings</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
