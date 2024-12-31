@@ -1,134 +1,69 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const profilePic = document.getElementById('profilePic');
-  const dropdownMenu = document.getElementById('dropdownMenu');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const settingsBtn = document.getElementById('settingsBtn');
-  const profileImg = document.getElementById('profileImg');
-  const searchBar = document.getElementById('searchBar');
-  const chatList = document.getElementById('chatList');
-  const messageInput = document.getElementById('messageInput');
-  const sendMessageBtn = document.getElementById('sendMessageBtn');
-  const messagesDiv = document.getElementById('messages');
-  const chatWith = document.getElementById('chatWith');
-  const status = document.getElementById('status');
-  
-  let selectedUser = null;
+    const socket = io(); // Initialize the Socket.IO client
 
-  // Fetching logged-in user's data (no sample data)
-  async function fetchUserData() {
-      try {
-          const response = await fetch('/get-user-data');
-          const data = await response.json();
+    const sendButton = document.querySelector('#sendButton');
+    const messageInput = document.querySelector('#messageInput');
+    const chatMessages = document.querySelector('#chatMessages');
+    const searchBar = document.querySelector('#searchBar');
+    const resultsContainer = document.querySelector('#searchResults');
+    const usernameElement = document.querySelector('#username');
+    const contactNameElement = document.querySelector('#contact-name');
+    const loggedInUser = usernameElement.textContent; // Assume logged-in user info is dynamically populated
 
-          if (data.username) {
-              // Set profile image and name
-              profileImg.src = data.profilePic || ''; // Profile pic
-              profileImg.alt = data.username;
-              profilePic.addEventListener('click', toggleDropdownMenu);
+    // Set the username of the user when they log in
+    socket.emit('set-username', loggedInUser);
 
-              // Chat list will be populated dynamically with contacts
-              // If there are contacts, they will be displayed here
-              if (data.contacts && data.contacts.length > 0) {
-                  data.contacts.forEach(contact => {
-                      const chatItem = document.createElement('div');
-                      chatItem.classList.add('chat-item');
-                      chatItem.innerHTML = `
-                          <img src="${contact.profilePic}" alt="Profile Picture">
-                          <div class="details">
-                              <div class="name">${contact.username}</div>
-                              <div class="message">${contact.lastMessage || 'No messages yet'}</div>
-                          </div>
-                      `;
-                      chatItem.addEventListener('click', () => startChat(contact.username));
-                      chatList.appendChild(chatItem);
-                  });
-              }
-          } else {
-              // Redirect to login if user is not logged in
-              window.location.href = '/login';
-          }
-      } catch (error) {
-          console.error('Error fetching user data:', error);
-      }
-  }
+    // Handle sending a message
+    sendButton.addEventListener('click', () => {
+        const message = messageInput.value.trim();
+        const recipient = contactNameElement.textContent;
 
-  // Toggle dropdown menu on profile click
-  function toggleDropdownMenu() {
-      dropdownMenu.classList.toggle('hidden');
-  }
+        if (message && recipient) {
+            // Send the message to the recipient
+            socket.emit('send-message', { sender: loggedInUser, recipient, message });
 
-  // Logout functionality
-  logoutBtn.addEventListener('click', () => {
-      alert('Logging out...');
-      // Implement actual logout functionality
-  });
+            // Display the message in the chat area (for the sender)
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.textContent = `You: ${message}`;
+            chatMessages.appendChild(messageElement);
+            messageInput.value = ''; // Clear input field
+        }
+    });
 
-  // Settings functionality
-  settingsBtn.addEventListener('click', () => {
-      alert('Redirecting to settings...');
-      // Implement actual settings page redirection or functionality
-  });
+    // Handle receiving a message
+    socket.on('receive-message', (data) => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.textContent = `${data.sender}: ${data.message}`;
+        chatMessages.appendChild(messageElement);
+    });
 
-  // Function to start chat with selected contact
-  function startChat(username) {
-      selectedUser = username;
-      chatWith.textContent = `Chatting with ${username}`;
-      messageInput.disabled = false;
-      sendMessageBtn.disabled = false;
-      messagesDiv.innerHTML = ''; // Clear previous messages
+    // Handle search input for searching contacts
+    searchBar.addEventListener('input', async (event) => {
+        const query = event.target.value.trim();
 
-      // Fetch messages for this user
-      fetchMessages(username);
-  }
+        if (query.length > 0) {
+            try {
+                const response = await fetch(`/search?q=${query}`);
+                const users = await response.json();
 
-  // Fetch chat messages for selected user
-  async function fetchMessages(username) {
-      try {
-          const response = await fetch(`/get-messages/${username}`);
-          const data = await response.json();
-          
-          // Display messages
-          if (data.messages && data.messages.length > 0) {
-              data.messages.forEach(message => {
-                  const messageDiv = document.createElement('div');
-                  messageDiv.classList.add('message', message.type);
-                  messageDiv.innerHTML = `<div class="message-text">${message.text}</div>`;
-                  messagesDiv.appendChild(messageDiv);
-              });
-          } else {
-              messagesDiv.innerHTML = `<div class="message">No messages yet</div>`;
-          }
-      } catch (error) {
-          console.error('Error fetching messages:', error);
-      }
-  }
-
-  // Send message functionality
-  sendMessageBtn.addEventListener('click', async () => {
-      const message = messageInput.value.trim();
-      if (message && selectedUser) {
-          try {
-              const response = await fetch('/send-message', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ to: selectedUser, text: message })
-              });
-              const data = await response.json();
-              if (data.success) {
-                  const newMessage = document.createElement('div');
-                  newMessage.classList.add('message', 'sent');
-                  newMessage.innerHTML = `<div class="message-text">${message}</div>`;
-                  messagesDiv.appendChild(newMessage);
-                  messageInput.value = ''; // Clear input field
-              }
-          } catch (error) {
-              console.error('Error sending message:', error);
-          }
-      }
-  });
-
-  // Initial data fetch
-  fetchUserData();
+                resultsContainer.innerHTML = ''; // Clear previous results
+                users.forEach((user) => {
+                    const resultItem = document.createElement('div');
+                    resultItem.classList.add('search-result');
+                    resultItem.textContent = user.username;
+                    resultItem.addEventListener('click', () => {
+                        contactNameElement.textContent = user.username; // Set the contact's name in the chat window
+                        resultsContainer.innerHTML = ''; // Clear the search results
+                    });
+                    resultsContainer.appendChild(resultItem);
+                });
+            } catch (err) {
+                console.error('Error fetching search results:', err);
+            }
+        } else {
+            resultsContainer.innerHTML = ''; // Clear search results if query is empty
+        }
+    });
 });

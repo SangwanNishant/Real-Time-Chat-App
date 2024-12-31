@@ -2,11 +2,16 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const http = require('http'); // Import the HTTP module
+const socketIo = require('socket.io'); // Import socket.io
 require("dotenv").config();
 const path = require('path');
 const { log } = require('console');
 
 const app = express();
+const server = http.createServer(app); // Create the HTTP server
+const io = socketIo(server); // Initialize socket.io with the HTTP server
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,6 +53,23 @@ function isAuthenticated(req, res, next) {
     }
     res.redirect('/'); // If not logged in, redirect to the landing page
 }
+
+// Add this route to handle the search query
+app.get('/search', isAuthenticated, async (req, res) => {
+    const query = req.query.q;
+    if (!query) {
+        return res.json([]);
+    }
+    try {
+        // Search for users that match the query
+        const users = await User.find({ username: { $regex: query, $options: 'i' } }); // Case-insensitive search
+        res.json(users);
+    } catch (err) {
+        console.error('Error searching for users:', err);
+        res.status(500).json({ message: 'Error searching for users' });
+    }
+});
+
 
 // Signup endpoint
 app.post('/signup', async (req, res) => {
@@ -105,8 +127,39 @@ app.get('/logout', (req, res) => {
     });
 });
 
+// Socket.IO logic
+const userSockets = {}; // Store user sockets to track connections
+
+io.on('connection', (socket) => {
+    console.log('A user connected: ' + socket.id);
+
+    // When a user logs in, associate their socket with their username
+    socket.on('set-username', (username) => {
+        userSockets[username] = socket.id; // Store the socket ID for the user
+        console.log(`${username} is now connected with socket ID: ${socket.id}`);
+    });
+
+    // Handle sending a message to another user
+    socket.on('send-message', (data) => {
+        const { recipient, message } = data;
+        const recipientSocketId = userSockets[recipient]; // Get the socket ID of the recipient
+
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('receive-message', { sender: data.sender, message });
+            console.log(`Message sent to ${recipient}`);
+        } else {
+            console.log('Recipient not connected');
+        }
+    });
+
+    // Handle disconnection
+    socket.on('disconnect', () => {
+        console.log('A user disconnected');
+    });
+});
+
 // Start server
 const PORT = 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

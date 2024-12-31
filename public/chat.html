@@ -3,47 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+    <title>WhatsApp Web Theme Chat</title>
     <link rel="stylesheet" href="chat.css">
 </head>
 <body>
-    <div class="chat-container">
-        <!-- Left side - Chat List -->
-        <div class="chat-list">
+    <div class="container">
+        <div class="sidebar">
+            <!-- User Info and Search Bar -->
+            <div class="user-info">
+                <img src="profile-placeholder.png" alt="Profile" class="profile-img">
+                <h3 id="username">User</h3>
+            </div>
             <div class="search-bar">
-                <input type="text" placeholder="Search people..." id="searchBar">
+                <input type="text" placeholder="Search contacts..." id="searchBar">
             </div>
-            <!-- This is where the dynamic contacts will be injected -->
-            <div id="chatList"></div>
+
+            <!-- Search Results -->
+            <div id="searchResults" class="search-results-container"></div>
         </div>
 
-        <!-- Right side - Chat Box -->
-        <div class="chat-box">
+        <!-- Chat Area -->
+        <div class="chat-area">
             <div class="chat-header">
-                <div class="name" id="chatWith">Select a contact</div>
-                <div class="status" id="status">Offline</div>
+                <span>Chat with <span id="contact-name">Friend</span></span>
+                <a href="/logout" id="logout">Logout</a>
             </div>
-            <div class="messages" id="messages">
-                <!-- This is where the dynamic messages will appear -->
-            </div>
-            <div class="message-input">
-                <input type="text" placeholder="Type a message..." id="messageInput" disabled>
-                <button id="sendMessageBtn" disabled>Send</button>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-footer">
+                <textarea id="messageInput" placeholder="Type a message..."></textarea>
+                <button id="sendButton">Send</button>
             </div>
         </div>
     </div>
 
-    <!-- Profile Section (Top Right) -->
-    <div class="profile">
-        <div class="profile-picture" id="profilePic">
-            <img src="" alt="Profile Picture" id="profileImg">
-        </div>
-        <div id="dropdownMenu" class="dropdown-menu hidden">
-            <button id="logoutBtn">Logout</button>
-            <button id="settingsBtn">Settings</button>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+    <script src="chat.js"></script>
 </body>
 </html>
